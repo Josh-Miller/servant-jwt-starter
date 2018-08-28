@@ -14,10 +14,11 @@ import           Config                      (AppT (..), Config)
 import           Control.Monad.Except        (MonadIO, liftIO)
 import           Control.Monad.Reader        (liftIO, runReaderT)
 import           Crypto.BCrypt               (hashPasswordUsingPolicy,
-                                              slowerBcryptHashingPolicy)
+                                              slowerBcryptHashingPolicy,
+                                              validatePassword)
 import           Data.Aeson
 import           Data.Int                    (Int64)
-import           Data.Text                   (Text)
+import           Data.Text
 import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
 import           Database.Persist.Postgresql (Entity (..), fromSqlKey, insert,
                                               selectFirst, selectList, (==.))
@@ -30,10 +31,14 @@ import           Servant
 data GenUser = GenUser
   { email    :: Text
   , password :: Text
-  } deriving (Generics)
+  } deriving (Generic)
+
+instance ToJSON GenUser
+
+instance FromJSON GenUser
 
 type UserApi
-   = "users" :> Get '[ JSON] [Entity User] :<|> "user" :> Capture "name" Text :> Get '[ JSON] (Entity User) :<|> "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] Int64
+   = "users" :> Get '[ JSON] [Entity User] :<|> "user" :> Capture "name" Text :> Get '[ JSON] (Entity User) :<|> "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] (Entity User)
 
 appServer :: Config -> Server UserApi
 appServer cfg = hoistServer userApi (convertApp cfg) userServer
@@ -67,8 +72,19 @@ registerUser u = do
       fromSqlKey <$>
       runDb (insert (User (userName u) (userEmail u) (decodeUtf8 hashPass')))
 
-loginUser :: MonadIO m => GenUser -> AppT m Int64
-loginUser u = undefined
+loginUser :: MonadIO m => GenUser -> AppT m (Entity User)
+loginUser u = do
+  user <- runDb (selectFirst [Md.UserEmail ==. email u] [])
+  case user of
+    Nothing -> throwError err404
+    Just (Entity userId x) ->
+      if isValidPass
+        then return $ Entity userId x
+        else throwError $ err401 {errBody = "Your credentials are invalid."}
+      where isValidPass =
+              validatePassword
+                (encodeUtf8 $ Md.userPassword x)
+                (encodeUtf8 $ password u)
 
 -- | The server that runs the UserAPI
 userServer :: MonadIO m => ServerT UserApi (AppT m)
