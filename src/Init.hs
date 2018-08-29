@@ -1,14 +1,16 @@
 module Init where
 
-import Api (app)
-import Config
-import Control.Exception (bracket)
-import Database.Persist.Postgresql (runSqlPool)
-import Models
-import Network.Wai (Application)
-import Network.Wai.Handler.Warp (run)
-import Safe
-import System.Environment (lookupEnv)
+import           Api                         (app)
+import           Config
+import           Control.Exception           (bracket)
+import           Database.Persist.Postgresql (runSqlPool)
+import           Models
+import           Network.Wai                 (Application)
+import           Network.Wai.Handler.Warp    (run)
+import           Safe
+import           Servant.Auth.Server         (defaultCookieSettings,
+                                              defaultJWTSettings, generateKey)
+import           System.Environment          (lookupEnv)
 
 runApp :: IO ()
 runApp = bracket getConfig shutdown runApp
@@ -28,14 +30,21 @@ getConfig :: IO Config
 getConfig = do
   port <- lookupSetting "PORT" 3000
   pool <- makePool
-  return Config {configPort = port, configPool = pool}
+  key <- generateKey
+  return
+    Config
+      { configPort = port
+      , configPool = pool
+      , configJwt = defaultJWTSettings key
+      , configCookie = defaultCookieSettings
+      }
 
 lookupSetting :: Read a => String -> a -> IO a
 lookupSetting env def = do
   maybeVal <- lookupEnv env
   case maybeVal of
     Nothing -> return def
-    Just x -> maybe (handleFail x) return (readMay x)
+    Just x  -> maybe (handleFail x) return (readMay x)
   where
     handleFail x =
       error $ mconcat ["Failed to read ", x, " for environment ", env]

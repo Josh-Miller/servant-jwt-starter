@@ -1,24 +1,24 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Config where
 
-import Control.Monad.Except (ExceptT, MonadError)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (runStdoutLoggingT)
-import Control.Monad.Reader (MonadIO, MonadReader, ReaderT)
-import Database.Persist.Postgresql
-  ( ConnectionPool
-  , ConnectionString
-  , createPostgresqlPool
-  )
-import Servant (ServantErr)
+import           Control.Monad.Except        (ExceptT, MonadError)
+import           Control.Monad.IO.Class      (liftIO)
+import           Control.Monad.Logger        (runStdoutLoggingT)
+import           Control.Monad.Reader        (MonadIO, MonadReader, ReaderT)
+import           Database.Persist.Postgresql (ConnectionPool, ConnectionString,
+                                              createPostgresqlPool)
+import           Servant                     (ServantErr)
+import           Servant.Auth.Server         (CookieSettings, JWTSettings)
 
 data Config = Config
-  { configPort :: Int
-  , configPool :: ConnectionPool
+  { configPort   :: Int
+  , configPool   :: ConnectionPool
+  , configJwt    :: JWTSettings
+  , configCookie :: CookieSettings
   }
 
 newtype AppT m a = AppT

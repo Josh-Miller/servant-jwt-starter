@@ -38,7 +38,10 @@ instance ToJSON GenUser
 instance FromJSON GenUser
 
 type UserApi
-   = "users" :> Get '[ JSON] [Entity User] :<|> "user" :> Capture "name" Text :> Get '[ JSON] (Entity User) :<|> "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] (Entity User)
+   = "users" :> Get '[ JSON] [Entity User] :<|> "user" :> Capture "name" Text :> Get '[ JSON] (Entity User)
+
+type UnprotectedUserApi
+   = "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] (Entity User)
 
 appServer :: Config -> Server UserApi
 appServer cfg = hoistServer userApi (convertApp cfg) userServer
@@ -88,7 +91,10 @@ loginUser u = do
 
 -- | The server that runs the UserAPI
 userServer :: MonadIO m => ServerT UserApi (AppT m)
-userServer = allUsers :<|> singleUser :<|> registerUser :<|> loginUser
+userServer = allUsers :<|> singleUser
+
+unprotectedUserServer :: MonadIO m => ServerT UnprotectedUserApi (AppT m)
+unprotectedUserServer = registerUser :<|> loginUser
 
 app :: Config -> Application
 app cfg = serve userApi (appServer cfg)
