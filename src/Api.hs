@@ -10,7 +10,8 @@
 
 module Api where
 
-import           Config                      (AppT (..), Config)
+import           Config                      (AppT (..), Config, configCookie,
+                                              configJwt)
 import           Control.Monad.Except        (MonadIO, liftIO)
 import           Control.Monad.Reader        (liftIO, runReaderT)
 import           Crypto.BCrypt               (hashPasswordUsingPolicy,
@@ -27,13 +28,18 @@ import           Models                      (User (User), runDb, userEmail,
                                               userName)
 import qualified Models                      as Md
 import           Servant
+import           Servant.Auth.Server
 
 data GenUser = GenUser
   { email    :: Text
   , password :: Text
   } deriving (Generic)
 
+instance ToJWT GenUser
+
 instance ToJSON GenUser
+
+instance FromJWT GenUser
 
 instance FromJSON GenUser
 
@@ -43,14 +49,14 @@ type UserApi
 type UnprotectedUserApi
    = "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] (Entity User)
 
-appServer :: Config -> Server UserApi
-appServer cfg = hoistServer userApi (convertApp cfg) userServer
-
-convertApp :: Config -> AppT IO a -> Handler a
-convertApp cfg appt = Handler $ runReaderT (runApp appt) cfg
+type Api auths
+   = (Servant.Auth.Server.Auth auths GenUser :> UserApi) :<|> UnprotectedUserApi
 
 userApi :: Proxy UserApi
 userApi = Proxy
+
+api :: Proxy (Api '[ JWT])
+api = Proxy
 
 allUsers :: MonadIO m => AppT m [Entity User]
 allUsers = runDb (selectList [] [])
@@ -93,8 +99,45 @@ loginUser u = do
 userServer :: MonadIO m => ServerT UserApi (AppT m)
 userServer = allUsers :<|> singleUser
 
-unprotectedUserServer :: MonadIO m => ServerT UnprotectedUserApi (AppT m)
-unprotectedUserServer = registerUser :<|> loginUser
+unprotectedUserServer ::
+     MonadIO m
+  => CookieSettings
+  -> JWTSettings
+  -> ServerT UnprotectedUserApi (AppT m)
+unprotectedUserServer cs jwts = registerUser :<|> loginUser
+
+-- | 'Protected' will be protected by 'auths', which we still have to specify.
+protected ::
+     MonadIO m
+  => Servant.Auth.Server.AuthResult GenUser
+  -> ServerT UserApi (AppT m)
+-- If we get an "Authenticated v", we can trust the information in v, since
+-- it was signed by a key we trust.
+protected (Servant.Auth.Server.Authenticated user) = allUsers :<|> singleUser
+-- Otherwise, we return a 401.
+protected _                                        = throwAll err401
+
+appServer :: Config -> Server UserApi
+appServer cfg = hoistServer userApi (convertApp cfg) userServer
+
+server :: MonadIO m => Config -> ServerT (Api auths) (AppT m)
+server cfg =
+  protected :<|> unprotectedUserServer (configCookie cfg) (configJwt cfg)
+
+{- allServer :: Config -> Server (Api auths)-}
+allServer cfg =
+  hoistServerWithContext
+    api
+    (Proxy :: Proxy '[ CookieSettings, JWTSettings])
+    (convertApp cfg)
+    (server cfg)
+
+convertApp :: Config -> AppT IO a -> Handler a
+convertApp cfg appt = Handler $ runReaderT (runApp appt) cfg
 
 app :: Config -> Application
-app cfg = serve userApi (appServer cfg)
+app cfg =
+  serveWithContext
+    api
+    (configCookie cfg :. configJwt cfg :. EmptyContext)
+    (allServer cfg)
