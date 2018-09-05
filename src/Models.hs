@@ -29,7 +29,12 @@ User json
     name Text
     email Text
     password Text
+    organizationId OrganizationId Maybe
     deriving Show Eq Generic
+Organization json
+    name Text
+    accountOwner UserId
+    logo Text Maybe
 |]
 
 instance ToJWT User

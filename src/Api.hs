@@ -10,6 +10,8 @@
 
 module Api where
 
+import           Api.Organization            (OrganizationApi,
+                                              protectedOrganization)
 import           Config                      (AppT (..), Config, configCookie,
                                               configJwt)
 import           Control.Monad.Except        (MonadIO, liftIO)
@@ -51,7 +53,8 @@ type UserApi
 type UnprotectedUserApi
    = "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> PostNoContent '[ JSON] (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
 
-type Api auths = (Auth auths User :> UserApi) :<|> UnprotectedUserApi
+type Api auths
+   = (Auth auths User :> UserApi) :<|> (Auth auths User :> OrganizationApi) :<|> UnprotectedUserApi
 
 userApi :: Proxy UserApi
 userApi = Proxy
@@ -80,12 +83,17 @@ registerUser u = do
     Nothing -> throwError err404
     Just hashPass' ->
       fromSqlKey <$>
-      runDb (insert (User (userName u) (userEmail u) (decodeUtf8 hashPass')))
+      runDb
+        (insert
+           (User
+              (userName u)
+              (userEmail u)
+              (decodeUtf8 hashPass')
+              (Md.userOrganizationId u)))
 
-makeToken :: User -> Config -> IO (Either Error ByteString)
-makeToken (User name email password) cfg =
-  makeJWT (User name email password) (configJwt cfg) Nothing
-
+{- makeToken :: User -> Config -> IO (Either Error ByteString)-}
+{- makeToken (User name email password) cfg =-}
+{-   makeJWT (User name email password) (configJwt cfg) Nothing-}
 loginUser ::
      MonadIO m
   => GenUser
@@ -133,7 +141,8 @@ appServer cfg = hoistServer userApi (convertApp cfg) userServer
 
 server :: MonadIO m => Config -> ServerT (Api auths) (AppT m)
 server cfg =
-  protected :<|> unprotectedUserServer (configCookie cfg) (configJwt cfg)
+  protected :<|> protectedOrganization :<|>
+  unprotectedUserServer (configCookie cfg) (configJwt cfg)
 
 {- allServer :: Config -> Server (Api auths)-}
 allServer cfg =
