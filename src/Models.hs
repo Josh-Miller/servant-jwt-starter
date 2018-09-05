@@ -19,6 +19,8 @@ import           Data.Text            (Text)
 import           Database.Persist.Sql (SqlPersistT, runMigration, runSqlPool)
 import           Database.Persist.TH  (mkMigrate, mkPersist, persistLowerCase,
                                        share, sqlSettings)
+import           GHC.Generics
+import           Servant.Auth.Server
 
 share
   [mkPersist sqlSettings, mkMigrate "migrateAll"]
@@ -27,8 +29,12 @@ User json
     name Text
     email Text
     password Text
-    deriving Show Eq
+    deriving Show Eq Generic
 |]
+
+instance ToJWT User
+
+instance FromJWT User
 
 doMigrations :: SqlPersistT IO ()
 doMigrations = runMigration migrateAll

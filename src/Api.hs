@@ -13,11 +13,13 @@ module Api where
 import           Config                      (AppT (..), Config, configCookie,
                                               configJwt)
 import           Control.Monad.Except        (MonadIO, liftIO)
-import           Control.Monad.Reader        (liftIO, runReaderT)
+import           Control.Monad.Reader        (ask, liftIO, runReaderT)
 import           Crypto.BCrypt               (hashPasswordUsingPolicy,
                                               slowerBcryptHashingPolicy,
                                               validatePassword)
+import           Crypto.JOSE.Error           (Error)
 import           Data.Aeson
+import           Data.ByteString.Lazy        (ByteString)
 import           Data.Int                    (Int64)
 import           Data.Text
 import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
@@ -47,10 +49,9 @@ type UserApi
    = "users" :> Get '[ JSON] [Entity User] :<|> "user" :> Capture "name" Text :> Get '[ JSON] (Entity User)
 
 type UnprotectedUserApi
-   = "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> Post '[ JSON] (Entity User)
+   = "register" :> ReqBody '[ JSON] User :> Post '[ JSON] Int64 :<|> "login" :> ReqBody '[ JSON] GenUser :> PostNoContent '[ JSON] (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
 
-type Api auths
-   = (Servant.Auth.Server.Auth auths GenUser :> UserApi) :<|> UnprotectedUserApi
+type Api auths = (Auth auths User :> UserApi) :<|> UnprotectedUserApi
 
 userApi :: Proxy UserApi
 userApi = Proxy
@@ -81,14 +82,27 @@ registerUser u = do
       fromSqlKey <$>
       runDb (insert (User (userName u) (userEmail u) (decodeUtf8 hashPass')))
 
-loginUser :: MonadIO m => GenUser -> AppT m (Entity User)
+makeToken :: User -> Config -> IO (Either Error ByteString)
+makeToken (User name email password) cfg =
+  makeJWT (User name email password) (configJwt cfg) Nothing
+
+loginUser ::
+     MonadIO m
+  => GenUser
+  -> AppT m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)
 loginUser u = do
+  cfg <- ask
   user <- runDb (selectFirst [Md.UserEmail ==. email u] [])
   case user of
     Nothing -> throwError err404
     Just (Entity userId x) ->
       if isValidPass
-        then return $ Entity userId x
+        then do
+          mApplyCookies <-
+            liftIO $ acceptLogin (configCookie cfg) (configJwt cfg) x
+          case mApplyCookies of
+            Nothing           -> throwError err401
+            Just applyCookies -> return $ applyCookies NoContent
         else throwError $ err401 {errBody = "Your credentials are invalid."}
       where isValidPass =
               validatePassword
@@ -107,15 +121,12 @@ unprotectedUserServer ::
 unprotectedUserServer cs jwts = registerUser :<|> loginUser
 
 -- | 'Protected' will be protected by 'auths', which we still have to specify.
-protected ::
-     MonadIO m
-  => Servant.Auth.Server.AuthResult GenUser
-  -> ServerT UserApi (AppT m)
+protected :: MonadIO m => AuthResult User -> ServerT UserApi (AppT m)
 -- If we get an "Authenticated v", we can trust the information in v, since
 -- it was signed by a key we trust.
-protected (Servant.Auth.Server.Authenticated user) = allUsers :<|> singleUser
+protected (Authenticated user) = allUsers :<|> singleUser
 -- Otherwise, we return a 401.
-protected _                                        = throwAll err401
+protected _                    = throwAll err401
 
 appServer :: Config -> Server UserApi
 appServer cfg = hoistServer userApi (convertApp cfg) userServer

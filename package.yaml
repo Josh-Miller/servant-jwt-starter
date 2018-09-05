@@ -36,6 +36,8 @@ dependencies:
 - bcrypt
 - bytestring
 - servant-auth-server
+- jose
+- time
 
 library:
   source-dirs: src
