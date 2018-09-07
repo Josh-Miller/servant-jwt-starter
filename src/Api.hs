@@ -32,7 +32,7 @@ server cfg =
   protectedUser :<|> protectedOrganization :<|>
   unprotectedUser (configCookie cfg) (configJwt cfg)
 
-{- allServer :: Config -> Server (Api auths)-}
+allServer :: Config -> Server (Api auths)
 allServer cfg =
   hoistServerWithContext
     api
