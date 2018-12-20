@@ -3,7 +3,10 @@ module Init where
 import           Api                         (app)
 import           Config
 import           Control.Exception           (bracket)
+import           Data.Pool                   (destroyAllResources)
 import           Database.Persist.Postgresql (runSqlPool)
+import           Katip                       (closeScribes)
+import           Logger                      (defaultLogEnv)
 import           Models
 import           Network.Wai                 (Application)
 import           Network.Wai.Handler.Warp    (run)
@@ -17,7 +20,10 @@ runApp = bracket getConfig shutdown runApp
   where
     runApp config = run (configPort config) =<< initialize config
 
-shutdown config = pure ()
+shutdown cfg = do
+  closeScribes (configLogEnv cfg)
+  destroyAllResources (configPool cfg)
+  pure ()
 
 -- | The 'initialize' function accepts the required environment information,
 -- initializes the WAI 'Application' and returns it
@@ -28,8 +34,10 @@ initialize cfg = do
 
 getConfig :: IO Config
 getConfig = do
-  port <- lookupSetting "PORT" 3000
-  pool <- makePool
+  port <- lookupSetting "PORT" 4002
+  env <- lookupSetting "ENVIRONMENT" Local
+  logEnv <- defaultLogEnv
+  pool <- makePool env logEnv
   key <- generateKey
   return
     Config
@@ -37,6 +45,8 @@ getConfig = do
       , configPool = pool
       , configJwt = defaultJWTSettings key
       , configCookie = defaultCookieSettings
+      , configEnv = env
+      , configLogEnv = logEnv
       }
 
 lookupSetting :: Read a => String -> a -> IO a

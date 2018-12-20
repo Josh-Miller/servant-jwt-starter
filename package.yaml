@@ -39,6 +39,9 @@ dependencies:
 - jose
 - time
 - foreign-store
+- katip
+- fast-logger
+- resource-pool
 
 library:
   source-dirs: src

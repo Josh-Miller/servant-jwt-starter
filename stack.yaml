@@ -40,6 +40,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - hindent-5.2.7
+- katip-0.7.0.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

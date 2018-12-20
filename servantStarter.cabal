@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 367a85102c4a881c05df845b78b62aec2627a0591a6c5d749a0100a56c631a33
+-- hash: 0384e5fe8055913e678f5b4281e414dd38a5f0266dd5661d3d426641d7c12442
 
 name:           servantStarter
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       DevelMain
       Init
       Lib
+      Logger
       Models
       Password
   other-modules:
@@ -44,13 +45,16 @@ library
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , fast-logger
     , foreign-store
     , jose
+    , katip
     , monad-logger
     , mtl
     , persistent
     , persistent-postgresql
     , persistent-template
+    , resource-pool
     , safe
     , servant-auth
     , servant-auth-server
@@ -73,13 +77,16 @@ executable servantStarter-exe
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , fast-logger
     , foreign-store
     , jose
+    , katip
     , monad-logger
     , mtl
     , persistent
     , persistent-postgresql
     , persistent-template
+    , resource-pool
     , safe
     , servant-auth
     , servant-auth-server
@@ -104,13 +111,16 @@ test-suite servantStarter-test
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , fast-logger
     , foreign-store
     , jose
+    , katip
     , monad-logger
     , mtl
     , persistent
     , persistent-postgresql
     , persistent-template
+    , resource-pool
     , safe
     , servant-auth
     , servant-auth-server

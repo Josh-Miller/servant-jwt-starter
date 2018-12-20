@@ -19,12 +19,13 @@ import           Control.Monad.Except (MonadIO)
 import           Control.Monad.Reader (runReaderT)
 import           Models               (User (User))
 import           Servant
-import           Servant.Auth.Server  (Auth, CookieSettings, JWT, JWTSettings)
+import           Servant.Auth.Server  (Auth, Cookie, CookieSettings, JWT,
+                                       JWTSettings)
 
 type Api auths
    = (Auth auths User :> UserApi) :<|> (Auth auths User :> OrganizationApi) :<|> UnprotectedUserApi
 
-api :: Proxy (Api '[ JWT])
+api :: Proxy (Api '[ JWT, Cookie])
 api = Proxy
 
 server :: MonadIO m => Config -> ServerT (Api auths) (AppT m)

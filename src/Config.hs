@@ -11,6 +11,7 @@ import           Control.Monad.Logger        (runStdoutLoggingT)
 import           Control.Monad.Reader        (MonadIO, MonadReader, ReaderT)
 import           Database.Persist.Postgresql (ConnectionPool, ConnectionString,
                                               createPostgresqlPool)
+import           Katip                       (LogEnv, runKatipT)
 import           Servant                     (ServantErr)
 import           Servant.Auth.Server         (CookieSettings, JWTSettings)
 
@@ -19,6 +20,8 @@ data Config = Config
   , configPool   :: ConnectionPool
   , configJwt    :: JWTSettings
   , configCookie :: CookieSettings
+  , configEnv    :: Environment
+  , configLogEnv :: LogEnv
   }
 
 newtype AppT m a = AppT
@@ -31,8 +34,22 @@ newtype AppT m a = AppT
              , MonadIO
              )
 
+data Environment
+  = Local
+  | Development
+  | Staging
+  | Production
+  deriving (Eq, Show, Ord, Read)
+
 connStr :: ConnectionString
 connStr = "host=localhost port=5432 user=test dbname=test password=test"
 
-makePool :: IO ConnectionPool
-makePool = runStdoutLoggingT $ createPostgresqlPool connStr 1
+makePool :: Environment -> LogEnv -> IO ConnectionPool
+makePool Local env =
+  runKatipT env $ runStdoutLoggingT $ createPostgresqlPool connStr 1
+makePool Development env =
+  runKatipT env $ runStdoutLoggingT $ createPostgresqlPool connStr 1
+makePool Staging env =
+  runKatipT env $ runStdoutLoggingT $ createPostgresqlPool connStr 1
+makePool Production env =
+  runKatipT env $ runStdoutLoggingT $ createPostgresqlPool connStr 1
