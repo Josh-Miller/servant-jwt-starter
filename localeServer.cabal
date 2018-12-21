@@ -2,16 +2,14 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0384e5fe8055913e678f5b4281e414dd38a5f0266dd5661d3d426641d7c12442
+-- hash: 5646701067315dc4b98c8c1fd303ee499bae85bac9c66aed4f5d23cccf0dd7c6
 
-name:           servantStarter
+name:           localeServer
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/servant-jwt-starter#readme>
-homepage:       https://github.com/githubuser/servant-jwt-starter#readme
-bug-reports:    https://github.com/githubuser/servant-jwt-starter/issues
-author:         Josh
+author:         Locale & Co
 maintainer:     example@example.com
-copyright:      2018 Josh
+copyright:      2018 Locale & Co
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -20,13 +18,10 @@ extra-source-files:
     ChangeLog.md
     README.md
 
-source-repository head
-  type: git
-  location: https://github.com/githubuser/servant-jwt-starter
-
 library
   exposed-modules:
       Api
+      Api.Item
       Api.Organization
       Api.User
       Config
@@ -37,7 +32,7 @@ library
       Models
       Password
   other-modules:
-      Paths_servantStarter
+      Paths_localeServer
   hs-source-dirs:
       src
   build-depends:
@@ -65,10 +60,10 @@ library
     , warp
   default-language: Haskell2010
 
-executable servantStarter-exe
+executable localeServer-exe
   main-is: Main.hs
   other-modules:
-      Paths_servantStarter
+      Paths_localeServer
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -81,6 +76,7 @@ executable servantStarter-exe
     , foreign-store
     , jose
     , katip
+    , localeServer
     , monad-logger
     , mtl
     , persistent
@@ -91,18 +87,17 @@ executable servantStarter-exe
     , servant-auth
     , servant-auth-server
     , servant-server
-    , servantStarter
     , text
     , time
     , wai
     , warp
   default-language: Haskell2010
 
-test-suite servantStarter-test
+test-suite localeServer-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_servantStarter
+      Paths_localeServer
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -115,6 +110,7 @@ test-suite servantStarter-test
     , foreign-store
     , jose
     , katip
+    , localeServer
     , monad-logger
     , mtl
     , persistent
@@ -125,7 +121,6 @@ test-suite servantStarter-test
     , servant-auth
     , servant-auth-server
     , servant-server
-    , servantStarter
     , text
     , time
     , wai
