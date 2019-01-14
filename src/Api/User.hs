@@ -112,17 +112,5 @@ loginUser u = do
 userServer :: MonadIO m => ServerT UserApi (AppT m)
 userServer = allUsers :<|> singleUser
 
-unprotectedUser ::
-     MonadIO m
-  => CookieSettings
-  -> JWTSettings
-  -> ServerT UnprotectedUserApi (AppT m)
-unprotectedUser cs jwts = registerUser :<|> loginUser
-
--- | 'Protected' will be protected by 'auths', which we still have to specify.
-protectedUser :: MonadIO m => AuthResult User -> ServerT UserApi (AppT m)
--- If we get an "Authenticated v", we can trust the information in v, since
--- it was signed by a key we trust.
-protectedUser (Authenticated user) = allUsers :<|> singleUser
--- Otherwise, we return a 401.
-protectedUser _                    = throwAll err401
+unprotectedUser :: MonadIO m => ServerT UnprotectedUserApi (AppT m)
+unprotectedUser = registerUser :<|> loginUser

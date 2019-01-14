@@ -2,9 +2,9 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5646701067315dc4b98c8c1fd303ee499bae85bac9c66aed4f5d23cccf0dd7c6
+-- hash: 58eb80aa888a085604ff8e412d340702b1d6e2b1c38a56d3279fb2846c3222f0
 
-name:           localeServer
+name:           payment
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/servant-jwt-starter#readme>
 author:         Locale & Co
@@ -22,7 +22,7 @@ library
   exposed-modules:
       Api
       Api.Item
-      Api.Organization
+      Api.Payments
       Api.User
       Config
       DevelMain
@@ -31,8 +31,9 @@ library
       Logger
       Models
       Password
+      Transaction
   other-modules:
-      Paths_localeServer
+      Paths_payment
   hs-source-dirs:
       src
   build-depends:
@@ -40,8 +41,13 @@ library
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , exceptions
     , fast-logger
     , foreign-store
+    , generic-lens
+    , http-client
+    , http-client-tls
+    , http-types
     , jose
     , katip
     , monad-logger
@@ -60,10 +66,10 @@ library
     , warp
   default-language: Haskell2010
 
-executable localeServer-exe
+executable payment-exe
   main-is: Main.hs
   other-modules:
-      Paths_localeServer
+      Paths_payment
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -72,13 +78,18 @@ executable localeServer-exe
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , exceptions
     , fast-logger
     , foreign-store
+    , generic-lens
+    , http-client
+    , http-client-tls
+    , http-types
     , jose
     , katip
-    , localeServer
     , monad-logger
     , mtl
+    , payment
     , persistent
     , persistent-postgresql
     , persistent-template
@@ -93,11 +104,11 @@ executable localeServer-exe
     , warp
   default-language: Haskell2010
 
-test-suite localeServer-test
+test-suite payment-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_localeServer
+      Paths_payment
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -106,13 +117,18 @@ test-suite localeServer-test
     , base >=4.7 && <5
     , bcrypt
     , bytestring
+    , exceptions
     , fast-logger
     , foreign-store
+    , generic-lens
+    , http-client
+    , http-client-tls
+    , http-types
     , jose
     , katip
-    , localeServer
     , monad-logger
     , mtl
+    , payment
     , persistent
     , persistent-postgresql
     , persistent-template

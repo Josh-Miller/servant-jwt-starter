@@ -1,4 +1,4 @@
-name:                localeServer
+name:                payment
 version:             0.1.0.0
 license:             BSD3
 author:              "Locale & Co"
@@ -41,12 +41,17 @@ dependencies:
 - katip
 - fast-logger
 - resource-pool
+- generic-lens
+- http-client-tls
+- http-client
+- http-types
+- exceptions
 
 library:
   source-dirs: src
 
 executables:
-  localeServer-exe:
+  payment-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -54,10 +59,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - localeServer
+    - payment
 
 tests:
-  localeServer-test:
+  payment-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -65,4 +70,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - localeServer
+    - payment

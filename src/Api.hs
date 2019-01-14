@@ -10,11 +10,8 @@
 
 module Api where
 
-import           Api.Item             (ProtectedItemApi, UnprotectedItemApi,
-                                       protectedItem, unprotectedItem)
-import           Api.Organization     (OrganizationApi, protectedOrganization)
 import           Api.User             (GenUser (..), UnprotectedUserApi,
-                                       UserApi, protectedUser, unprotectedUser)
+                                       UserApi, unprotectedUser)
 import           Config               (AppT (..), Config, configCookie,
                                        configJwt)
 import           Control.Monad.Except (MonadIO)
@@ -24,31 +21,19 @@ import           Servant
 import           Servant.Auth.Server  (Auth, Cookie, CookieSettings, JWT,
                                        JWTSettings)
 
-type Api auths
-   = (Auth auths User :> UserApi) :<|> (Auth auths User :> OrganizationApi) :<|> UnprotectedUserApi
+type Api = UnprotectedUserApi
 
-api :: Proxy (Api '[ JWT, Cookie])
+api :: Proxy Api
 api = Proxy
 
-server :: MonadIO m => Config -> ServerT (Api auths) (AppT m)
-server cfg =
-  protectedUser :<|> protectedOrganization :<|>
-  unprotectedUser (configCookie cfg) (configJwt cfg)
+server :: MonadIO m => Config -> ServerT Api (AppT m)
+server cfg = unprotectedUser
 
-allServer :: Config -> Server (Api auths)
-allServer cfg =
-  hoistServerWithContext
-    api
-    (Proxy :: Proxy '[ CookieSettings, JWTSettings])
-    (convertApp cfg)
-    (server cfg)
+allServer :: Config -> Server Api
+allServer cfg = hoistServer api (convertApp cfg) (server cfg)
 
 convertApp :: Config -> AppT IO a -> Handler a
 convertApp cfg appt = Handler $ runReaderT (runApp appt) cfg
 
 app :: Config -> Application
-app cfg =
-  serveWithContext
-    api
-    (configCookie cfg :. configJwt cfg :. EmptyContext)
-    (allServer cfg)
+app cfg = serve api (allServer cfg)
