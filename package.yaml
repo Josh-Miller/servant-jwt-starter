@@ -1,10 +1,9 @@
-name:                servantStarter
+name:                localeServer
 version:             0.1.0.0
-github:              "githubuser/servant-jwt-starter"
 license:             BSD3
-author:              "Josh"
+author:              "Locale & Co"
 maintainer:          "example@example.com"
-copyright:           "2018 Josh"
+copyright:           "2018 Locale & Co"
 
 extra-source-files:
 - README.md
@@ -47,7 +46,7 @@ library:
   source-dirs: src
 
 executables:
-  servantStarter-exe:
+  localeServer-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -55,10 +54,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - servantStarter
+    - localeServer
 
 tests:
-  servantStarter-test:
+  localeServer-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -66,4 +65,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - servantStarter
+    - localeServer

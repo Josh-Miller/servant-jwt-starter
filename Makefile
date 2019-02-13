@@ -3,7 +3,7 @@ help: ## Print documentation
 
 ghcid-devel: ## Run the server in fast development mode. See DevelMain for details.
 	ghcid \
-	    --command "stack ghci servantStarter" \
+	    --command "stack ghci localeServer" \
 	    --test "DevelMain.update"
 
 .PHONY: ghcid-devel help
