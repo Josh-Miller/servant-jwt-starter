@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0384e5fe8055913e678f5b4281e414dd38a5f0266dd5661d3d426641d7c12442
+-- hash: accaf40ef63250aa2a6c54b8612c853f75ae528daf30e6159074c870b25f36e5
 
 name:           servantStarter
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 library
   exposed-modules:
       Api
+      Api.Item
       Api.Organization
       Api.User
       Config

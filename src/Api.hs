@@ -10,6 +10,8 @@
 
 module Api where
 
+import           Api.Item             (ProtectedItemApi, UnprotectedItemApi,
+                                       protectedItem, unprotectedItem)
 import           Api.Organization     (OrganizationApi, protectedOrganization)
 import           Api.User             (GenUser (..), UnprotectedUserApi,
                                        UserApi, protectedUser, unprotectedUser)
